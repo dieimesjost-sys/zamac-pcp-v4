@@ -1,0 +1,14 @@
+{
+  "appId": "com.dieimesjost.zamacpcp",
+  "appName": "ZamacPCP Pro",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "backgroundColor": "#090d16",
+    "allowMixedContent": true
+  },
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  }
+}

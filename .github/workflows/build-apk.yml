@@ -1,0 +1,54 @@
+name: Build Android APK (ZamacPCP Pro v4)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do Repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configurar Java 17 (JDK)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Instalar dependencias Capacitor e gerar projeto Android
+        run: |
+          npm install
+          npx cap add android
+          npx cap sync android
+
+      - name: Liberar Internet e Trafego HTTP Local no AndroidManifest
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if ! grep -q "android.permission.INTERNET" "$MANIFEST"; then
+            sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET" \/>\n    <application/' "$MANIFEST"
+          fi
+          sed -i 's/<application/<application android:usesCleartextTraffic="true"/' "$MANIFEST"
+
+      - name: Compilar APK Debug
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload do APK Gerado
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZamacPCP-Pro-v4.0-Filtros-Pesquisa
+          path: android/app/build/outputs/apk/debug/app-debug.apk

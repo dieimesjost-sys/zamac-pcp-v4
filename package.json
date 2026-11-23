@@ -1,0 +1,16 @@
+{
+  "name": "zamac-pcp-pro",
+  "version": "4.0.0",
+  "description": "ZamacPCP Pro v4 - Filtros Avancados, Lote e Terceirizados",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Ready'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}
