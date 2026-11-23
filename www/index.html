@@ -1,1 +1,1194 @@
-<!DOCTYPE html><html lang="pt-BR" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>ZamacPCP Pro v4</title><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-[#090d16] text-white p-6"><h1 class="text-xl font-bold">ZamacPCP Pro v4</h1><p class="text-sm text-slate-400 mt-2">Configure o IP do servidor no topo para sincronizar.</p></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#090d16" />
+  <title>ZamacPCP Pro v4 — Filtros Avançados, Lote & Terceirizados</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #090d16;
+      color: #f1f5f9;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      overflow-x: hidden;
+    }
+    .card-dark {
+      background: linear-gradient(180deg, #111827 0%, #0d1320 100%);
+      border: 1px solid #1e293b;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    }
+    .tab-btn { transition: all 0.16s ease; white-space: nowrap; }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(2,132,199,0.35);
+    }
+    input, select, textarea { font-size: 16px !important; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="antialiased">
+
+  <header class="sticky top-0 z-40 bg-[#090d16]/95 backdrop-blur border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center font-extrabold text-white text-base shadow-lg shadow-sky-500/20">
+          Z5
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-extrabold text-white tracking-tight">ZamacPCP <span class="text-sky-400">Pro</span></h1>
+            <button onclick="openServerModal()" id="conn-badge" class="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+              <span id="conn-dot" class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              <span id="conn-label">Configurar IP</span>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400">Calçados • Vestuário • Bolsas & Terceirizados</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <button onclick="syncNow(true)" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-medium text-sky-300 transition">
+          🔄 Sync
+        </button>
+        <button onclick="exportReportCSV()" class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition">
+          📥 CSV
+        </button>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 pb-3 overflow-x-auto no-scrollbar">
+      <div class="flex items-center gap-2">
+        <button onclick="setTab('painel')" id="btn-tab-painel" class="tab-btn active px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 text-slate-300">
+          📊 Painel & Gargalos
+        </button>
+        <button onclick="setTab('importar')" id="btn-tab-importar" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 text-slate-300">
+          📤 Importar Pedidos (Lote)
+        </button>
+        <button onclick="setTab('ops')" id="btn-tab-ops" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 text-slate-300">
+          📋 Ordens (OP)
+        </button>
+        <button onclick="setTab('apontamento')" id="btn-tab-apontamento" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 text-slate-300">
+          ⚙️ Apontar & Refugo
+        </button>
+        <button onclick="setTab('setores')" id="btn-tab-setores" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 text-slate-300">
+          🏭 Setores & Terceiros
+        </button>
+        <button onclick="setTab('liga')" id="btn-tab-liga" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 text-slate-300">
+          🧱 Liga Z5
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-5 space-y-5">
+
+    <section id="sec-painel" class="space-y-5">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div class="card-dark rounded-2xl p-4">
+          <p class="text-xs text-slate-400">OPs / Itens Ativos</p>
+          <p id="kpi-ops-ativas" class="text-2xl font-extrabold text-white mt-1">0</p>
+          <p id="kpi-pecas-total" class="text-[11px] text-sky-400 mt-1">0 peças programadas</p>
+        </div>
+        <div class="card-dark rounded-2xl p-4">
+          <p class="text-xs text-slate-400">Em Terceirizados</p>
+          <p id="kpi-terceiros" class="text-2xl font-extrabold text-purple-400 mt-1">0</p>
+          <p id="kpi-terceiros-pecas" class="text-[11px] text-slate-500 mt-1">0 peças fora da fábrica</p>
+        </div>
+        <div class="card-dark rounded-2xl p-4">
+          <p class="text-xs text-slate-400">Demanda Liga Zamac Z5</p>
+          <p id="kpi-peso-demanda" class="text-2xl font-extrabold text-amber-400 mt-1">0 kg</p>
+          <p id="kpi-saldo-z5" class="text-[11px] text-emerald-400 mt-1">Estoque: 0 kg</p>
+        </div>
+        <div class="card-dark rounded-2xl p-4">
+          <p class="text-xs text-slate-400">Índice Médio de Refugo</p>
+          <p id="kpi-refugo" class="text-2xl font-extrabold text-rose-400 mt-1">0,0%</p>
+          <p class="text-[11px] text-slate-500 mt-1">Meta fabril: &lt; 3,5%</p>
+        </div>
+      </div>
+
+      <div class="card-dark rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h2 class="text-sm font-bold text-white">Carga por Setor Fabril & Terceirizados</h2>
+            <p class="text-xs text-slate-400">Toque em qualquer setor abaixo para filtrar a fila de produção imediatamente</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="last-sync-txt" class="text-[11px] text-slate-400">Aguardando sync...</span>
+            <button onclick="setTab('setores')" class="text-xs text-sky-400 font-semibold">+ Novo Setor</button>
+          </div>
+        </div>
+        <div id="pipeline-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5"></div>
+      </div>
+
+      <div class="card-dark rounded-2xl overflow-hidden">
+        <div class="px-4 py-3.5 border-b border-slate-800 space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-bold text-white">Fila de Produção & Terceiros</h3>
+              <span id="painel-filter-count" class="text-[11px] px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30 font-semibold">0 exibidos</span>
+            </div>
+            <div class="flex gap-3">
+              <button onclick="clearPainelFilters()" class="text-xs text-slate-400 hover:text-white underline">Limpar filtros</button>
+              <button onclick="setTab('importar')" class="text-xs text-emerald-400 font-semibold">📤 Importar Pedido</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+            <input id="flt-painel-q" type="search" oninput="renderAll()" placeholder="🔍 Buscar OP, Ref, Cliente ou Peça..." class="lg:col-span-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none" />
+            <select id="flt-painel-setor" onchange="renderAll()" class="bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-xs text-white focus:border-sky-500">
+              <option value="">Todos os Setores</option>
+            </select>
+            <select id="flt-painel-seg" onchange="renderAll()" class="bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-xs text-white focus:border-sky-500">
+              <option value="">Todos Segmentos</option>
+              <option value="Calçados">Calçados</option>
+              <option value="Bolsas">Bolsas</option>
+              <option value="Vestuário">Vestuário</option>
+              <option value="Acessórios">Acessórios</option>
+            </select>
+            <select id="flt-painel-tipo" onchange="renderAll()" class="bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-xs text-white focus:border-sky-500">
+              <option value="">Internos + Terceiros</option>
+              <option value="Terceirizado">Somente Terceirizados</option>
+              <option value="Interno">Somente Internos</option>
+              <option value="Urgente">Prioridade Urgente</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800 text-[11px] uppercase text-slate-400 bg-slate-950/60">
+                <th class="py-3 px-3.5">OP / Ref</th>
+                <th class="py-3 px-3.5">Cliente / Seg.</th>
+                <th class="py-3 px-3.5">Qtd / Peso Z5</th>
+                <th class="py-3 px-3.5">Acabamento</th>
+                <th class="py-3 px-3.5">Setor / Terceiro</th>
+                <th class="py-3 px-3.5">Entrega</th>
+              </tr>
+            </thead>
+            <tbody id="painel-tbody" class="divide-y divide-slate-800/60 text-xs"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-importar" class="hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="card-dark rounded-2xl p-4 sm:p-5 lg:col-span-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-base font-bold text-white">Importação Rápida de Pedidos</h2>
+              <p class="text-xs text-slate-400">Importe dezenas de itens de um pedido de uma só vez</p>
+            </div>
+            <button onclick="downloadTemplateCSV()" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 font-medium">
+              📄 Baixar Modelo CSV
+            </button>
+          </div>
+
+          <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 space-y-2.5">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-sky-400">Dados Padrão do Pedido</p>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[11px] text-slate-400">Cliente Padrão</label>
+                <input id="imp-cliente" type="text" placeholder="Ex: Calçados Beira Rio" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm text-white" />
+              </div>
+              <div>
+                <label class="text-[11px] text-slate-400">Segmento</label>
+                <select id="imp-seg" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-white">
+                  <option value="Calçados">Calçados</option>
+                  <option value="Bolsas">Bolsas</option>
+                  <option value="Vestuário">Vestuário</option>
+                  <option value="Acessórios">Acessórios</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[11px] text-slate-400">Entrega Padrão</label>
+                <input id="imp-entrega" type="date" value="2026-12-10" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm text-white" />
+              </div>
+              <div>
+                <label class="text-[11px] text-slate-400">Setor Inicial</label>
+                <select id="imp-setor-ini" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-white"></select>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-300 block mb-1.5">Opção A: Selecionar Arquivo CSV (.csv / .txt)</label>
+            <input type="file" id="imp-file" accept=".csv,.txt" onchange="handleFileUpload(event)" class="w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 bg-slate-950 border border-slate-800 rounded-xl p-1.5" />
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-semibold text-slate-300">Opção B: Colar Linhas do Excel / ERP</label>
+              <button onclick="fillExampleBatch()" class="text-[11px] text-amber-400 hover:underline">Preencher exemplo</button>
+            </div>
+            <p class="text-[11px] text-slate-400 mb-1.5">Formato: <code class="text-slate-300">OP ; Referência ; Descrição ; Qtd ; Peso(g) ; Banho</code></p>
+            <textarea id="imp-raw" rows="6" oninput="parseBatchText()" placeholder="OP-2026-101; FIV-901; Fivela 25mm Z5; 12000; 14.5; Níquel Escovado" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white font-mono focus:border-sky-500 focus:outline-none"></textarea>
+          </div>
+
+          <button onclick="confirmBatchImport()" id="btn-confirm-import" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm py-3 rounded-xl shadow-lg shadow-emerald-600/20 transition">
+            ✅ Importar 0 Itens para a Produção
+          </button>
+        </div>
+
+        <div class="card-dark rounded-2xl overflow-hidden lg:col-span-7 flex flex-col">
+          <div class="px-4 py-3.5 border-b border-slate-800 flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-white">Pré-visualização dos Itens do Pedido</h3>
+              <p class="text-xs text-slate-400">Confira referências, quantidades e peso total de Zamac antes de gravar</p>
+            </div>
+            <span id="imp-summary-badge" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">0 itens | 0 kg Z5</span>
+          </div>
+          <div class="overflow-x-auto flex-1">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-[11px] uppercase text-slate-400 bg-slate-950/60">
+                  <th class="py-2.5 px-3">OP</th>
+                  <th class="py-2.5 px-3">Ref / Peça</th>
+                  <th class="py-2.5 px-3">Qtd</th>
+                  <th class="py-2.5 px-3">Peso Z5</th>
+                  <th class="py-2.5 px-3">Banho</th>
+                  <th class="py-2.5 px-3">Cliente</th>
+                </tr>
+              </thead>
+              <tbody id="imp-preview-tbody" class="divide-y divide-slate-800/60 text-xs">
+                <tr><td colspan="6" class="py-8 text-center text-slate-500">Cole as linhas do Excel ou carregue um CSV ao lado para visualizar os itens aqui.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-ops" class="hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="card-dark rounded-2xl p-4 space-y-3">
+          <h2 class="text-sm font-bold text-white">Emitir Ordem de Produção (Unitária)</h2>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="text-[11px] text-slate-400">Nº OP</label>
+              <input id="op-num" type="text" placeholder="OP-2026-005" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400">Segmento</label>
+              <select id="op-seg" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-sm text-white">
+                <option value="Calçados">Calçados</option>
+                <option value="Bolsas">Bolsas</option>
+                <option value="Vestuário">Vestuário</option>
+                <option value="Cintos / Acessórios">Cintos / Acessórios</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[11px] text-slate-400">Cliente / Marca</label>
+            <input id="op-cli" type="text" placeholder="Ex: Calçados Beira Rio / Arezzo" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="text-[11px] text-slate-400">Código / Ref. Molde</label>
+              <input id="op-ref" type="text" placeholder="FIV-4100" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400">Peso Unit. Peça (g)</label>
+              <input id="op-peso" type="number" step="0.1" value="12.5" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[11px] text-slate-400">Descrição da Peça</label>
+            <input id="op-desc" type="text" placeholder="Fivela 25mm Zamac Z5 com Pino" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="text-[11px] text-slate-400">Qtd. Peças</label>
+              <input id="op-qtd" type="number" value="10000" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400">Acabamento / Banho</label>
+              <input id="op-banho" type="text" value="Níquel Escovado" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="text-[11px] text-slate-400">Setor Inicial</label>
+              <select id="op-etapa-ini" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-sm text-white"></select>
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400">Data Entrega</label>
+              <input id="op-ent" type="date" value="2026-12-05" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-sm text-white" />
+            </div>
+          </div>
+
+          <button onclick="submitNewOP()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm py-2.5 rounded-xl transition">
+            + Lançar OP no Servidor
+          </button>
+        </div>
+
+        <div class="lg:col-span-2 space-y-3">
+          <div class="card-dark rounded-2xl p-3.5 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-white">Controle de Roteiro por OP</h3>
+              <span id="ops-filter-count" class="text-xs text-sky-400 font-semibold">0 ordens</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input id="flt-ops-q" type="search" oninput="renderAll()" placeholder="🔍 Filtrar OP, Ref, Cliente ou Banho..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none" />
+              <select id="flt-ops-setor" onchange="renderAll()" class="bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-xs text-white focus:border-sky-500">
+                <option value="">Todas as Etapas / Setores</option>
+              </select>
+              <select id="flt-ops-status" onchange="renderAll()" class="bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-xs text-white focus:border-sky-500">
+                <option value="ativas">Em Andamento</option>
+                <option value="todas">Todas (Incluindo Concluídas)</option>
+                <option value="concluidas">Somente Concluídas</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="ops-cards-list" class="space-y-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-apontamento" class="hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="card-dark rounded-2xl p-4 space-y-3">
+          <h2 class="text-sm font-bold text-white">Apontar Produção / Retorno Terceiro</h2>
+          <div>
+            <label class="text-[11px] text-slate-400">Buscar / Selecionar OP</label>
+            <input id="ap-op-search" type="search" oninput="filterApOpDropdown()" placeholder="Digite nº OP ou referência..." class="w-full mt-1 mb-1.5 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:border-sky-500" />
+            <select id="ap-op" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white"></select>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="text-[11px] text-slate-400">Setor / Terceirizado</label>
+              <select id="ap-setor" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-sm text-white"></select>
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400">Máquina / Prestador</label>
+              <input id="ap-maq" type="text" placeholder="Inj. 02 ou Nome Terceiro" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="text-[11px] text-slate-400">Qtd. Peças Boas</label>
+              <input id="ap-boas" type="number" value="2500" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400">Qtd. Refugo / Retrab.</label>
+              <input id="ap-refugo" type="number" value="45" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="text-[11px] text-slate-400">Motivo Refugo</label>
+              <select id="ap-motivo" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-sm text-white">
+                <option value="Nenhum">Nenhum</option>
+                <option value="Porosidade / Bolha">Porosidade / Bolha</option>
+                <option value="Falha Enchimento">Falha Enchimento</option>
+                <option value="Rebarba Excessiva">Rebarba Excessiva</option>
+                <option value="Mancha / Falha Banho">Mancha / Falha Banho</option>
+                <option value="Defeito Terceirizado">Defeito Terceirizado</option>
+                <option value="Escorrimento Verniz">Escorrimento Verniz</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400">Borra / Canal (kg)</label>
+              <input id="ap-borra" type="number" step="0.1" value="1.2" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+            </div>
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-400">Observação / Nº Nota Remessa</label>
+            <input id="ap-obs" type="text" placeholder="Ex: NF Remessa #4412 ou ajuste molde" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+          </div>
+          <button onclick="submitApontamento()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm py-2.5 rounded-xl transition">
+            Registrar Apontamento
+          </button>
+        </div>
+
+        <div class="lg:col-span-2 card-dark rounded-2xl overflow-hidden">
+          <div class="px-4 py-3.5 border-b border-slate-800 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-white">Histórico de Apontamentos & Remessas</h3>
+              <span id="ap-filter-count" class="text-xs text-slate-400">0 registros</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input id="flt-ap-q" type="search" oninput="renderAll()" placeholder="🔍 Buscar OP, Ref, Operador ou NF..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none" />
+              <select id="flt-ap-setor" onchange="renderAll()" class="bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-xs text-white focus:border-sky-500">
+                <option value="">Todos os Setores</option>
+              </select>
+              <select id="flt-ap-refugo" onchange="renderAll()" class="bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-xs text-white focus:border-sky-500">
+                <option value="">Todos Apontamentos</option>
+                <option value="com_refugo">Com Refugo / Retrabalho</option>
+              </select>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-[11px] uppercase text-slate-400 bg-slate-950/60">
+                  <th class="py-3 px-3.5">OP / Ref</th>
+                  <th class="py-3 px-3.5">Setor / Terceiro</th>
+                  <th class="py-3 px-3.5">Boas</th>
+                  <th class="py-3 px-3.5">Refugo</th>
+                  <th class="py-3 px-3.5">Causa / Obs</th>
+                </tr>
+              </thead>
+              <tbody id="apontamentos-tbody" class="divide-y divide-slate-800/60 text-xs"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-setores" class="hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="card-dark rounded-2xl p-4 space-y-3">
+          <div>
+            <h2 class="text-sm font-bold text-white">Cadastrar Novo Setor ou Terceirizado</h2>
+            <p class="text-xs text-slate-400">Adicione etapas internas ou prestadores externos</p>
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-400">Nome do Setor / Processo</label>
+            <input id="set-nome" type="text" placeholder="Ex: Colagem de Strass (Terceiro)" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="text-[11px] text-slate-400">Tipo de Execução</label>
+              <select id="set-tipo" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-sm text-white">
+                <option value="Terceirizado">Terceirizado (Externo)</option>
+                <option value="Interno">Interno (Fábrica)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400">Ordem no Fluxo</label>
+              <input id="set-ordem" type="number" value="5" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+            </div>
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-400">Fornecedor / Observação</label>
+            <input id="set-obs" type="text" placeholder="Ex: Oficina MetalArte - Prazo 3 dias" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+          </div>
+          <button onclick="submitNewSetor()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold text-sm py-2.5 rounded-xl transition">
+            + Adicionar Setor ao Roteiro
+          </button>
+        </div>
+
+        <div class="lg:col-span-2 card-dark rounded-2xl overflow-hidden">
+          <div class="px-4 py-3.5 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2">
+            <h3 class="text-sm font-bold text-white">Roteiro de Setores Cadastrados</h3>
+            <input id="flt-set-q" type="search" oninput="renderAll()" placeholder="🔍 Buscar setor ou fornecedor..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:border-sky-500 focus:outline-none" />
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-[11px] uppercase text-slate-400 bg-slate-950/60">
+                  <th class="py-3 px-4">Ordem</th>
+                  <th class="py-3 px-4">Setor / Processo</th>
+                  <th class="py-3 px-4">Tipo</th>
+                  <th class="py-3 px-4">Fornecedor / Obs</th>
+                  <th class="py-3 px-4 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody id="setores-tbody" class="divide-y divide-slate-800/60 text-xs"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-liga" class="hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="card-dark rounded-2xl p-4 space-y-3">
+          <h2 class="text-sm font-bold text-white">Movimentar Estoque Zamac Z5</h2>
+          <div>
+            <label class="text-[11px] text-slate-400">Tipo de Movimentação</label>
+            <select id="est-tipo" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white">
+              <option value="Entrada Lingote Z5">Entrada Lingote Z5 (+)</option>
+              <option value="Consumo Injeção">Consumo Injeção (-)</option>
+              <option value="Retorno Canal/Galho (Refundição)">Retorno Canal/Galho (+)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-400">Peso (kg)</label>
+            <input id="est-peso" type="number" step="0.5" value="250" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-400">Origem / Destino / Lote</label>
+            <input id="est-orig" type="text" placeholder="Ex: Lote Lingote #904 / Forno 01" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white" />
+          </div>
+          <button onclick="submitEstoque()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold text-sm py-2.5 rounded-xl transition">
+            Lançar Movimentação Z5
+          </button>
+
+          <div class="pt-3 border-t border-slate-800 space-y-2">
+            <h3 class="text-xs font-bold uppercase text-sky-400">Simulador Rápido de Liga Z5</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="sim-qtd" type="number" value="10000" oninput="calcSimZ5()" placeholder="Qtd peças" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-sm text-white" />
+              <input id="sim-peso" type="number" step="0.1" value="15" oninput="calcSimZ5()" placeholder="Peso (g)" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-sm text-white" />
+            </div>
+            <p id="sim-res" class="text-xs text-slate-300 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              Peso Líquido: <strong>150,0 kg</strong> | Com 12% canal/galho: <strong>168,0 kg</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 card-dark rounded-2xl overflow-hidden">
+          <div class="px-4 py-3.5 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 class="text-sm font-bold text-white">Kardex da Liga Zamac Z5</h3>
+              <span id="kardex-total" class="text-xs font-bold text-emerald-400">Saldo: 0 kg</span>
+            </div>
+            <div class="flex gap-2">
+              <input id="flt-est-q" type="search" oninput="renderAll()" placeholder="🔍 Filtrar lote/forno..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:border-sky-500 focus:outline-none" />
+              <select id="flt-est-tipo" onchange="renderAll()" class="bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-white">
+                <option value="">Todos Tipos</option>
+                <option value="Entrada Lingote Z5">Entradas</option>
+                <option value="Consumo Injeção">Consumos</option>
+                <option value="Retorno Canal/Galho (Refundição)">Refundição</option>
+              </select>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-[11px] uppercase text-slate-400 bg-slate-950/60">
+                  <th class="py-3 px-4">Data/Hora</th>
+                  <th class="py-3 px-4">Operação</th>
+                  <th class="py-3 px-4">Origem / Destino</th>
+                  <th class="py-3 px-4 text-right">Peso (kg)</th>
+                </tr>
+              </thead>
+              <tbody id="estoque-tbody" class="divide-y divide-slate-800/60 text-xs"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="server-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="card-dark rounded-2xl p-5 w-full max-w-md space-y-4">
+      <div>
+        <h3 class="text-base font-bold text-white">Conectar ao Servidor Local da Fábrica</h3>
+        <p class="text-xs text-slate-400 mt-1">Informe o IP local onde o <code class="text-sky-400">servidor_pcp.py</code> está rodando (ex: <code class="text-emerald-400">http://192.168.1.50:5055</code>).</p>
+      </div>
+      <div>
+        <label class="text-xs text-slate-300 font-medium">Endereço IP + Porta do Servidor</label>
+        <input id="server-url-input" type="url" placeholder="http://192.168.1.50:5055" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none" />
+      </div>
+      <div id="test-conn-result" class="text-xs text-slate-400"></div>
+      <div class="flex gap-2">
+        <button onclick="closeServerModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold py-2.5 rounded-xl">Fechar</button>
+        <button onclick="saveAndTestServer()" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs py-2.5 rounded-xl">Testar e Conectar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const KEY_SERVER_URL = "zamac_pcp_server_url_v4";
+    const KEY_CACHE_DATA = "zamac_pcp_cache_data_v4";
+
+    let state = { setores: [], ops: [], apontamentos: [], estoque: [] };
+    let parsedBatchItems = [];
+    let isOnlineServer = false;
+
+    function norm(str) {
+      return String(str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
+    function getServerUrl() {
+      return (localStorage.getItem(KEY_SERVER_URL) || "http://192.168.1.100:5055").replace(/\/+$/, "");
+    }
+
+    function openServerModal() {
+      document.getElementById("server-url-input").value = getServerUrl();
+      document.getElementById("test-conn-result").textContent = "";
+      document.getElementById("server-modal").classList.remove("hidden");
+    }
+
+    function closeServerModal() {
+      document.getElementById("server-modal").classList.add("hidden");
+    }
+
+    async function saveAndTestServer() {
+      let url = document.getElementById("server-url-input").value.trim().replace(/\/+$/, "");
+      if (!url.startsWith("http")) url = "http://" + url;
+      localStorage.setItem(KEY_SERVER_URL, url);
+
+      const resBox = document.getElementById("test-conn-result");
+      resBox.innerHTML = '<span class="text-sky-400">Testando conexão com ' + url + '...</span>';
+
+      const ok = await syncNow(true);
+      if (ok) {
+        resBox.innerHTML = '<span class="text-emerald-400 font-semibold">✅ Conectado ao servidor!</span>';
+        setTimeout(closeServerModal, 800);
+      } else {
+        resBox.innerHTML = '<span class="text-rose-400">❌ Falha ao conectar em ' + url + '. Verifique Wi-Fi e porta 5055.</span>';
+      }
+    }
+
+    function setConnectionStatus(online, url) {
+      isOnlineServer = online;
+      const badge = document.getElementById("conn-badge");
+      const dot = document.getElementById("conn-dot");
+      const label = document.getElementById("conn-label");
+      if (online) {
+        badge.className = "text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5";
+        dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse";
+        label.textContent = "Online: " + url.replace("http://", "");
+      } else {
+        badge.className = "text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5";
+        dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400";
+        label.textContent = "Offline (IP Local)";
+      }
+    }
+
+    function getSeedFallback() {
+      const now = new Date().toLocaleString("pt-BR").slice(0, 16);
+      return {
+        setores: [
+          { id: 1, nome: "Injeção Z5", tipo: "Interno", fornecedor_obs: "Injetoras 01 a 04", ordem: 1 },
+          { id: 2, nome: "Tamboreamento", tipo: "Interno", fornecedor_obs: "Vibradores", ordem: 2 },
+          { id: 3, nome: "Galvanoplastia", tipo: "Interno", fornecedor_obs: "Linha Interna", ordem: 3 },
+          { id: 4, nome: "Pintura Epóxi (Terceiro)", tipo: "Terceirizado", fornecedor_obs: "Prestador Externo", ordem: 4 },
+          { id: 5, nome: "Verniz / Estufa", tipo: "Interno", fornecedor_obs: "Cabine Verniz", ordem: 5 },
+          { id: 6, nome: "Expedição", tipo: "Interno", fornecedor_obs: "Embalagem", ordem: 6 }
+        ],
+        ops: [
+          { id: 1, numero_op: "OP-2026-001", cliente: "Calçados Beira Rio S.A.", segmento: "Calçados", referencia: "FIV-4092", descricao: "Fivela Anatômica 25mm Zamac Z5", qtd_planejada: 15000, peso_unit_g: 14.5, banho: "Níquel Escovado", etapa_atual: "Galvanoplastia", prioridade: "Alta", data_entrega: "2026-11-28", status: "Em Andamento" },
+          { id: 2, numero_op: "OP-2026-002", cliente: "Arezzo&Co Acessórios", segmento: "Bolsas", referencia: "MOS-8810", descricao: "Mosquetão Giratório 32mm Luxo", qtd_planejada: 8000, peso_unit_g: 28.0, banho: "Ouro Velho + Verniz", etapa_atual: "Pintura Epóxi (Terceiro)", prioridade: "Urgente", data_entrega: "2026-11-26", status: "Em Andamento" }
+        ],
+        apontamentos: [],
+        estoque: [
+          { id: 1, tipo: "Entrada Lingote Z5", peso_kg: 1200.0, origem_destino: "Cache Local", data_hora: now }
+        ]
+      };
+    }
+
+    async function syncNow(manual = false) {
+      const url = getServerUrl();
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3500);
+        const res = await fetch(`${url}/api/dashboard`, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        state = await res.json();
+        localStorage.setItem(KEY_CACHE_DATA, JSON.stringify(state));
+        setConnectionStatus(true, url);
+        document.getElementById("last-sync-txt").textContent = "Sync às " + new Date().toLocaleTimeString("pt-BR").slice(0, 5);
+        renderAll();
+        return true;
+      } catch (e) {
+        setConnectionStatus(false, url);
+        const cached = localStorage.getItem(KEY_CACHE_DATA);
+        state = cached ? JSON.parse(cached) : getSeedFallback();
+        document.getElementById("last-sync-txt").textContent = "Cache offline";
+        renderAll();
+        return false;
+      }
+    }
+
+    function setTab(tab) {
+      ["painel", "importar", "ops", "apontamento", "setores", "liga"].forEach(t => {
+        document.getElementById("sec-" + t).classList.add("hidden");
+        document.getElementById("btn-tab-" + t).classList.remove("active");
+      });
+      document.getElementById("sec-" + tab).classList.remove("hidden");
+      document.getElementById("btn-tab-" + tab).classList.add("active");
+    }
+
+    function isSetorTerceirizado(nomeSetor) {
+      const found = state.setores.find(s => s.nome === nomeSetor);
+      if (found) return found.tipo === "Terceirizado";
+      return nomeSetor.toLowerCase().includes("terceir");
+    }
+
+    function filterBySetorCard(nomeSetor) {
+      const sel = document.getElementById("flt-painel-setor");
+      sel.value = (sel.value === nomeSetor) ? "" : nomeSetor;
+      renderAll();
+    }
+
+    function clearPainelFilters() {
+      document.getElementById("flt-painel-q").value = "";
+      document.getElementById("flt-painel-setor").value = "";
+      document.getElementById("flt-painel-seg").value = "";
+      document.getElementById("flt-painel-tipo").value = "";
+      renderAll();
+    }
+
+    function populateFilterDropdowns() {
+      const setorOptsHtml = state.setores.map(s => `<option value="${s.nome}">${s.nome} ${s.tipo === 'Terceirizado' ? '[TERCEIRO]' : ''}</option>`).join("");
+      document.getElementById("imp-setor-ini").innerHTML = setorOptsHtml;
+      document.getElementById("op-etapa-ini").innerHTML = setorOptsHtml;
+      document.getElementById("ap-setor").innerHTML = setorOptsHtml;
+
+      const curPainelSetor = document.getElementById("flt-painel-setor").value;
+      const curOpsSetor = document.getElementById("flt-ops-setor").value;
+      const curApSetor = document.getElementById("flt-ap-setor").value;
+
+      document.getElementById("flt-painel-setor").innerHTML = `<option value="">Todos os Setores</option>` + setorOptsHtml;
+      document.getElementById("flt-ops-setor").innerHTML = `<option value="">Todas as Etapas / Setores</option>` + setorOptsHtml + `<option value="Concluída">Concluída</option>`;
+      document.getElementById("flt-ap-setor").innerHTML = `<option value="">Todos os Setores</option>` + setorOptsHtml;
+
+      document.getElementById("flt-painel-setor").value = curPainelSetor;
+      document.getElementById("flt-ops-setor").value = curOpsSetor;
+      document.getElementById("flt-ap-setor").value = curApSetor;
+    }
+
+    function filterApOpDropdown() {
+      const ativas = state.ops.filter(o => o.etapa_atual !== "Concluída");
+      const q = norm(document.getElementById("ap-op-search").value);
+      const filtered = q ? ativas.filter(o => norm(`${o.numero_op} ${o.referencia} ${o.cliente} ${o.descricao}`).includes(q)) : ativas;
+      document.getElementById("ap-op").innerHTML = filtered.map(o => `<option value="${o.id}">${o.numero_op} | ${o.referencia} (${o.cliente})</option>`).join("");
+    }
+
+    function renderAll() {
+      populateFilterDropdowns();
+
+      const ativas = state.ops.filter(o => o.etapa_atual !== "Concluída");
+      const totalPecas = ativas.reduce((acc, o) => acc + Number(o.qtd_planejada), 0);
+      const pesoBrutoKg = ativas.reduce((acc, o) => acc + ((Number(o.qtd_planejada) * Number(o.peso_unit_g)) / 1000) * 1.08, 0);
+      const saldoZ5 = state.estoque.reduce((acc, e) => acc + Number(e.peso_kg), 0);
+
+      const opsTerceiros = ativas.filter(o => isSetorTerceirizado(o.etapa_atual));
+      const pecasTerceiros = opsTerceiros.reduce((acc, o) => acc + Number(o.qtd_planejada), 0);
+
+      const totBoas = state.apontamentos.reduce((acc, a) => acc + Number(a.qtd_boas), 0);
+      const totRef = state.apontamentos.reduce((acc, a) => acc + Number(a.qtd_refugo), 0);
+      const percRefugo = (totBoas + totRef) > 0 ? (totRef / (totBoas + totRef)) * 100 : 0;
+
+      document.getElementById("kpi-ops-ativas").textContent = ativas.length;
+      document.getElementById("kpi-pecas-total").textContent = `${totalPecas.toLocaleString("pt-BR")} peças programadas`;
+      document.getElementById("kpi-terceiros").textContent = opsTerceiros.length;
+      document.getElementById("kpi-terceiros-pecas").textContent = `${pecasTerceiros.toLocaleString("pt-BR")} peças em terceiros`;
+      document.getElementById("kpi-peso-demanda").textContent = `${pesoBrutoKg.toFixed(1)} kg`;
+      document.getElementById("kpi-saldo-z5").textContent = `Estoque: ${saldoZ5.toFixed(1)} kg`;
+      document.getElementById("kpi-refugo").textContent = `${percRefugo.toFixed(2)}%`;
+      document.getElementById("kardex-total").textContent = `Saldo Atual: ${saldoZ5.toFixed(1)} kg`;
+
+      const activeSetorFilter = document.getElementById("flt-painel-setor").value;
+      const pipeGrid = document.getElementById("pipeline-grid");
+      pipeGrid.innerHTML = "";
+      state.setores.forEach(s => {
+        const loteSetor = ativas.filter(o => o.etapa_atual === s.nome);
+        const pecasSetor = loteSetor.reduce((acc, o) => acc + Number(o.qtd_planejada), 0);
+        const isTerc = s.tipo === "Terceirizado";
+        const isSelected = activeSetorFilter === s.nome;
+        const div = document.createElement("div");
+        div.onclick = () => filterBySetorCard(s.nome);
+        div.className = `cursor-pointer transition rounded-xl p-3 border ${
+          isSelected
+            ? "bg-sky-950/60 border-sky-400 ring-1 ring-sky-400"
+            : isTerc
+              ? "bg-purple-950/30 border-purple-500/40 hover:border-purple-400"
+              : "bg-slate-950/90 border-slate-800 hover:border-slate-600"
+        }`;
+        div.innerHTML = `
+          <div class="flex items-center justify-between gap-1">
+            <p class="text-[11px] font-semibold ${isTerc ? 'text-purple-300' : 'text-slate-400'} truncate">${s.nome}</p>
+            ${isTerc ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold">EXT</span>' : ''}
+          </div>
+          <p class="text-lg font-extrabold text-white mt-1">${loteSetor.length} <span class="text-xs font-normal text-slate-500">OPs</span></p>
+          <p class="text-[11px] ${isTerc ? 'text-purple-400' : 'text-sky-400'} mt-0.5">${pecasSetor.toLocaleString("pt-BR")} pçs</p>
+        `;
+        pipeGrid.appendChild(div);
+      });
+
+      const pQuery = norm(document.getElementById("flt-painel-q").value);
+      const pSetor = document.getElementById("flt-painel-setor").value;
+      const pSeg = document.getElementById("flt-painel-seg").value;
+      const pTipo = document.getElementById("flt-painel-tipo").value;
+
+      const filteredPainel = ativas.filter(op => {
+        if (pQuery && !norm(`${op.numero_op} ${op.referencia} ${op.cliente} ${op.descricao} ${op.banho}`).includes(pQuery)) return false;
+        if (pSetor && op.etapa_atual !== pSetor) return false;
+        if (pSeg && op.segmento !== pSeg) return false;
+        if (pTipo === "Terceirizado" && !isSetorTerceirizado(op.etapa_atual)) return false;
+        if (pTipo === "Interno" && isSetorTerceirizado(op.etapa_atual)) return false;
+        if (pTipo === "Urgente" && op.prioridade !== "Urgente") return false;
+        return true;
+      });
+
+      document.getElementById("painel-filter-count").textContent = `${filteredPainel.length} de ${ativas.length} exibidos`;
+
+      const pBody = document.getElementById("painel-tbody");
+      pBody.innerHTML = "";
+      filteredPainel.forEach(op => {
+        const pesoKg = ((op.qtd_planejada * op.peso_unit_g) / 1000).toFixed(1);
+        const isTerc = isSetorTerceirizado(op.etapa_atual);
+        const badgeClass = isTerc
+          ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
+          : "bg-sky-500/15 text-sky-300 border-sky-500/30";
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-900/40";
+        tr.innerHTML = `
+          <td class="py-3 px-3.5"><p class="font-bold text-white">${op.numero_op}</p><p class="text-[11px] text-sky-400">${op.referencia}</p></td>
+          <td class="py-3 px-3.5"><p class="font-medium text-slate-200">${op.cliente}</p><p class="text-[11px] text-slate-400">${op.segmento}</p></td>
+          <td class="py-3 px-3.5"><p class="font-semibold text-white">${Number(op.qtd_planejada).toLocaleString("pt-BR")} pçs</p><p class="text-[11px] text-amber-400">${pesoKg} kg Z5</p></td>
+          <td class="py-3 px-3.5 text-slate-300">${op.banho}</td>
+          <td class="py-3 px-3.5"><span class="px-2 py-1 rounded-lg text-[11px] font-semibold border ${badgeClass}">${op.etapa_atual}</span></td>
+          <td class="py-3 px-3.5 text-slate-300">${op.data_entrega}</td>
+        `;
+        pBody.appendChild(tr);
+      });
+
+      const oQuery = norm(document.getElementById("flt-ops-q").value);
+      const oSetor = document.getElementById("flt-ops-setor").value;
+      const oStatus = document.getElementById("flt-ops-status").value;
+
+      const filteredOps = state.ops.filter(op => {
+        if (oStatus === "ativas" && op.etapa_atual === "Concluída") return false;
+        if (oStatus === "concluidas" && op.etapa_atual !== "Concluída") return false;
+        if (oSetor && op.etapa_atual !== oSetor) return false;
+        if (oQuery && !norm(`${op.numero_op} ${op.referencia} ${op.cliente} ${op.descricao} ${op.banho}`).includes(oQuery)) return false;
+        return true;
+      });
+
+      document.getElementById("ops-filter-count").textContent = `${filteredOps.length} ordens`;
+
+      const cardsList = document.getElementById("ops-cards-list");
+      cardsList.innerHTML = "";
+      const allEtapas = [...state.setores.map(s => s.nome), "Concluída"];
+      filteredOps.forEach(op => {
+        const pesoKg = ((op.qtd_planejada * op.peso_unit_g) / 1000).toFixed(1);
+        const options = allEtapas.map(s => `<option value="${s}" ${op.etapa_atual === s ? "selected" : ""}>${s}</option>`).join("");
+        const isTerc = isSetorTerceirizado(op.etapa_atual);
+        const card = document.createElement("div");
+        card.className = "card-dark rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3";
+        card.innerHTML = `
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-extrabold text-white">${op.numero_op}</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30 font-semibold">${op.referencia}</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300">${op.segmento}</span>
+              ${isTerc ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold">TERCEIRIZADO</span>' : ''}
+            </div>
+            <p class="text-xs text-slate-200 font-medium">${op.cliente} — ${op.descricao}</p>
+            <p class="text-[11px] text-slate-400">Lote: <strong class="text-white">${Number(op.qtd_planejada).toLocaleString("pt-BR")} pçs</strong> • Liga Z5: <strong class="text-amber-400">${pesoKg} kg</strong> • Banho: <strong class="text-emerald-300">${op.banho}</strong></p>
+          </div>
+          <div>
+            <select onchange="changeEtapa(${op.id}, this.value)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:border-sky-500">
+              ${options}
+            </select>
+          </div>
+        `;
+        cardsList.appendChild(card);
+      });
+
+      const sQuery = norm(document.getElementById("flt-set-q").value);
+      const filteredSetores = state.setores.filter(s => !sQuery || norm(`${s.nome} ${s.tipo} ${s.fornecedor_obs}`).includes(sQuery));
+      const setTbody = document.getElementById("setores-tbody");
+      setTbody.innerHTML = "";
+      filteredSetores.forEach(s => {
+        const isTerc = s.tipo === "Terceirizado";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="py-3 px-4 text-slate-400 font-mono">#${s.ordem}</td>
+          <td class="py-3 px-4 font-bold text-white">${s.nome}</td>
+          <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-md text-[11px] font-semibold ${isTerc ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40' : 'bg-slate-800 text-slate-300'}">${s.tipo}</span></td>
+          <td class="py-3 px-4 text-slate-300">${s.fornecedor_obs || "-"}</td>
+          <td class="py-3 px-4 text-right">
+            <button onclick="deleteSetor(${s.id})" class="text-xs text-slate-500 hover:text-rose-400">Remover</button>
+          </td>
+        `;
+        setTbody.appendChild(tr);
+      });
+
+      filterApOpDropdown();
+      const apQuery = norm(document.getElementById("flt-ap-q").value);
+      const apSetor = document.getElementById("flt-ap-setor").value;
+      const apRefugo = document.getElementById("flt-ap-refugo").value;
+
+      const filteredAp = state.apontamentos.filter(a => {
+        if (apSetor && a.setor !== apSetor) return false;
+        if (apRefugo === "com_refugo" && Number(a.qtd_refugo) <= 0) return false;
+        if (apQuery && !norm(`${a.numero_op} ${a.referencia} ${a.setor} ${a.maquina_operador} ${a.motivo_refugo} ${a.observacao}`).includes(apQuery)) return false;
+        return true;
+      });
+      document.getElementById("ap-filter-count").textContent = `${filteredAp.length} registros`;
+
+      const apBody = document.getElementById("apontamentos-tbody");
+      apBody.innerHTML = "";
+      filteredAp.forEach(a => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="py-3 px-3.5 font-bold text-white">${a.numero_op} <span class="block text-[11px] font-normal text-sky-400">${a.referencia}</span></td>
+          <td class="py-3 px-3.5 text-slate-200">${a.setor} <span class="block text-[11px] text-slate-400">${a.maquina_operador}</span></td>
+          <td class="py-3 px-3.5 text-emerald-400 font-bold">${Number(a.qtd_boas).toLocaleString("pt-BR")}</td>
+          <td class="py-3 px-3.5 text-rose-400 font-bold">${Number(a.qtd_refugo).toLocaleString("pt-BR")}</td>
+          <td class="py-3 px-3.5 text-slate-300">${a.motivo_refugo || "-"} <span class="block text-[11px] text-slate-500">${a.observacao || ""}</span></td>
+        `;
+        apBody.appendChild(tr);
+      });
+
+      const estQuery = norm(document.getElementById("flt-est-q").value);
+      const estTipo = document.getElementById("flt-est-tipo").value;
+      const filteredEst = state.estoque.filter(e => {
+        if (estTipo && e.tipo !== estTipo) return false;
+        if (estQuery && !norm(`${e.tipo} ${e.origem_destino} ${e.data_hora}`).includes(estQuery)) return false;
+        return true;
+      });
+
+      const estBody = document.getElementById("estoque-tbody");
+      estBody.innerHTML = "";
+      filteredEst.forEach(e => {
+        const pos = Number(e.peso_kg) >= 0;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="py-3 px-4 text-slate-400">${e.data_hora}</td>
+          <td class="py-3 px-4 font-semibold text-white">${e.tipo}</td>
+          <td class="py-3 px-4 text-slate-300">${e.origem_destino}</td>
+          <td class="py-3 px-4 text-right font-bold ${pos ? "text-emerald-400" : "text-rose-400"}">${pos ? "+" : ""}${Number(e.peso_kg).toFixed(1)} kg</td>
+        `;
+        estBody.appendChild(tr);
+      });
+    }
+
+    function fillExampleBatch() {
+      document.getElementById("imp-cliente").value = "Calçados Beira Rio S.A.";
+      document.getElementById("imp-raw").value =
+`OP-2026-101; FIV-8812; Fivela Oval 22mm Zamac Z5; 18000; 11.5; Níquel Escovado
+OP-2026-102; PASS-330; Passador Retangular 20mm Z5; 18000; 6.2; Níquel Escovado
+OP-2026-103; ENF-9041; Enfeite Laço Cabedal c/ Pino; 12000; 9.8; Ouro Velho + Verniz`;
+      parseBatchText();
+    }
+
+    function downloadTemplateCSV() {
+      const csv = "OP;Referencia;Descricao;Quantidade;Peso_Unit_g;Banho;Cliente;Segmento;Entrega\nOP-2026-201;FIV-501;Fivela 25mm Zamac Z5;10000;14.5;Niquel Escovado;Calcados Exemplo;Calcados;2026-12-10\n";
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Modelo_Importacao_Pedido_ZamacPCP.csv";
+      a.click();
+    }
+
+    function handleFileUpload(evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById("imp-raw").value = e.target.result;
+        parseBatchText();
+      };
+      reader.readAsText(file, "UTF-8");
+    }
+
+    function parseBatchText() {
+      const raw = document.getElementById("imp-raw").value.trim();
+      const defCliente = document.getElementById("imp-cliente").value.trim() || "Cliente Pedido";
+      const defSeg = document.getElementById("imp-seg").value;
+      const defEnt = document.getElementById("imp-entrega").value || "2026-12-10";
+      const defSetor = document.getElementById("imp-setor-ini").value || "Injeção Z5";
+
+      parsedBatchItems = [];
+      if (!raw) { renderBatchPreview(); return; }
+
+      const lines = raw.split(/\r?\n/).filter(l => l.trim().length > 0);
+      lines.forEach((line, idx) => {
+        if (idx === 0 && (line.toLowerCase().includes("referencia") || line.toLowerCase().includes("descricao"))) return;
+        const sep = line.includes("\t") ? "\t" : (line.includes(";") ? ";" : ",");
+        const cols = line.split(sep).map(c => c.trim());
+        if (cols.length < 2) return;
+
+        parsedBatchItems.push({
+          numero_op: cols[0] || `OP-LOTE-${idx + 1}`,
+          referencia: cols[1] || "REF-Z5",
+          descricao: cols[2] || `Peça ${cols[1] || "Z5"}`,
+          qtd_planejada: parseInt((cols[3] || "1000").replace(/\./g, "")) || 1000,
+          peso_unit_g: parseFloat((cols[4] || "10").replace(",", ".")) || 10.0,
+          banho: cols[5] || "Níquel Escovado",
+          cliente: cols[6] || defCliente,
+          segmento: cols[7] || defSeg,
+          data_entrega: cols[8] || defEnt,
+          etapa_atual: defSetor,
+          prioridade: "Normal"
+        });
+      });
+      renderBatchPreview();
+    }
+
+    function renderBatchPreview() {
+      const tbody = document.getElementById("imp-preview-tbody");
+      const btn = document.getElementById("btn-confirm-import");
+      const badge = document.getElementById("imp-summary-badge");
+
+      if (parsedBatchItems.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-500">Nenhum item válido identificado ainda.</td></tr>';
+        btn.textContent = "✅ Importar 0 Itens para a Produção";
+        badge.textContent = "0 itens | 0 kg Z5";
+        return;
+      }
+
+      let totalKg = 0;
+      tbody.innerHTML = "";
+      parsedBatchItems.forEach(it => {
+        const kg = (it.qtd_planejada * it.peso_unit_g) / 1000;
+        totalKg += kg;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 font-bold text-white">${it.numero_op}</td>
+          <td class="py-2.5 px-3"><span class="text-sky-400 font-semibold">${it.referencia}</span> — ${it.descricao}</td>
+          <td class="py-2.5 px-3 font-semibold text-white">${it.qtd_planejada.toLocaleString("pt-BR")}</td>
+          <td class="py-2.5 px-3 text-amber-400 font-semibold">${kg.toFixed(1)} kg</td>
+          <td class="py-2.5 px-3 text-emerald-300">${it.banho}</td>
+          <td class="py-2.5 px-3 text-slate-300">${it.cliente}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      btn.textContent = `✅ Importar ${parsedBatchItems.length} Itens para a Produção`;
+      badge.textContent = `${parsedBatchItems.length} itens | ${totalKg.toFixed(1)} kg Z5`;
+    }
+
+    async function confirmBatchImport() {
+      if (parsedBatchItems.length === 0) return alert("Cole ou carregue os itens do pedido primeiro.");
+      const url = getServerUrl();
+      try {
+        const res = await fetch(`${url}/api/ops/import`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: parsedBatchItems })
+        });
+        const json = await res.json();
+        if (json.ok) {
+          document.getElementById("imp-raw").value = "";
+          parsedBatchItems = [];
+          renderBatchPreview();
+          await syncNow();
+          setTab("painel");
+          alert(`✅ ${json.inserted} ordens importadas!`);
+        }
+      } catch (e) {
+        alert("Sem conexão com o servidor (" + url + ").");
+      }
+    }
+
+    async function postToServer(endpoint, method, payload) {
+      const url = getServerUrl();
+      try {
+        const res = await fetch(`${url}${endpoint}`, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: payload ? JSON.stringify(payload) : undefined
+        });
+        if (!res.ok) throw new Error("Falha");
+        await syncNow();
+      } catch (e) {
+        alert("Sem conexão com o servidor (" + url + ").");
+      }
+    }
+
+    async function submitNewOP() {
+      const payload = {
+        numero_op: document.getElementById("op-num").value.trim() || `OP-2026-00${state.ops.length + 1}`,
+        cliente: document.getElementById("op-cli").value.trim() || "Cliente Calçadista RS",
+        segmento: document.getElementById("op-seg").value,
+        referencia: document.getElementById("op-ref").value.trim() || "REF-Z5",
+        descricao: document.getElementById("op-desc").value.trim() || "Peça Injetada Zamac Z5",
+        qtd_planejada: parseInt(document.getElementById("op-qtd").value) || 5000,
+        peso_unit_g: parseFloat(document.getElementById("op-peso").value) || 10.0,
+        banho: document.getElementById("op-banho").value.trim() || "Níquel Escovado",
+        etapa_atual: document.getElementById("op-etapa-ini").value || "Injeção Z5",
+        prioridade: "Normal",
+        data_entrega: document.getElementById("op-ent").value || "2026-12-10"
+      };
+      await postToServer("/api/ops", "POST", payload);
+      setTab("painel");
+    }
+
+    async function changeEtapa(opId, novaEtapa) {
+      await postToServer(`/api/ops/${opId}/etapa`, "PUT", { etapa_atual: novaEtapa });
+    }
+
+    async function submitNewSetor() {
+      const nome = document.getElementById("set-nome").value.trim();
+      if (!nome) return alert("Informe o nome do setor.");
+      const payload = {
+        nome,
+        tipo: document.getElementById("set-tipo").value,
+        ordem: parseInt(document.getElementById("set-ordem").value) || 10,
+        fornecedor_obs: document.getElementById("set-obs").value.trim()
+      };
+      await postToServer("/api/setores", "POST", payload);
+      document.getElementById("set-nome").value = "";
+      document.getElementById("set-obs").value = "";
+    }
+
+    async function deleteSetor(id) {
+      if (!confirm("Remover este setor?")) return;
+      await postToServer(`/api/setores/${id}`, "DELETE", null);
+    }
+
+    async function submitApontamento() {
+      const opId = parseInt(document.getElementById("ap-op").value);
+      if (!opId) return;
+      const payload = {
+        op_id: opId,
+        setor: document.getElementById("ap-setor").value,
+        maquina_operador: document.getElementById("ap-maq").value.trim() || "Turno Padrão",
+        qtd_boas: parseInt(document.getElementById("ap-boas").value) || 0,
+        qtd_refugo: parseInt(document.getElementById("ap-refugo").value) || 0,
+        motivo_refugo: document.getElementById("ap-motivo").value,
+        peso_borra_kg: parseFloat(document.getElementById("ap-borra").value) || 0,
+        observacao: document.getElementById("ap-obs").value.trim()
+      };
+      await postToServer("/api/apontamentos", "POST", payload);
+    }
+
+    async function submitEstoque() {
+      const payload = {
+        tipo: document.getElementById("est-tipo").value,
+        peso_kg: parseFloat(document.getElementById("est-peso").value) || 0,
+        origem_destino: document.getElementById("est-orig").value.trim() || "Movimentação Interna"
+      };
+      await postToServer("/api/estoque", "POST", payload);
+    }
+
+    function calcSimZ5() {
+      const q = parseFloat(document.getElementById("sim-qtd").value) || 0;
+      const p = parseFloat(document.getElementById("sim-peso").value) || 0;
+      const liq = (q * p) / 1000;
+      const bruto = liq * 1.12;
+      document.getElementById("sim-res").innerHTML = `Peso Líquido: <strong>${liq.toFixed(1)} kg</strong> | Com 12% canal/galho: <strong>${bruto.toFixed(1)} kg</strong>`;
+    }
+
+    function exportReportCSV() {
+      if (isOnlineServer) {
+        window.open(`${getServerUrl()}/api/export/csv`, "_blank");
+        return;
+      }
+      let csv = "OP;Cliente;Segmento;Referencia;Descricao;Qtd Planejada;Peso Unit (g);Peso Liga (kg);Banho;Etapa Atual;Entrega\n";
+      state.ops.forEach(r => {
+        const pesoKg = ((r.qtd_planejada * r.peso_unit_g) / 1000).toFixed(2);
+        csv += `${r.numero_op};${r.cliente};${r.segmento};${r.referencia};${r.descricao};${r.qtd_planejada};${r.peso_unit_g};${pesoKg};${r.banho};${r.etapa_atual};${r.data_entrega}\n`;
+      });
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "PCP_Zamac_OPs.csv";
+      a.click();
+    }
+
+    syncNow();
+    setInterval(() => syncNow(false), 15000);
+  </script>
+</body>
+</html>
