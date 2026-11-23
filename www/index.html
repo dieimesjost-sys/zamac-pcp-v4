@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#090d16" />
-  <title>ZamacPCP Pro v4 — Filtros Avançados, Lote & Terceirizados</title>
+  <title>ZamacPCP Pro v5 — Monitor Tempo Real, Atrasos & Adiantadas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -32,10 +32,16 @@
     input, select, textarea { font-size: 16px !important; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes pulseBorder {
+      0%, 100% { border-color: rgba(244, 63, 94, 0.75); }
+      50% { border-color: rgba(244, 63, 94, 0.25); }
+    }
+    .alert-pulse { animation: pulseBorder 2s infinite; }
   </style>
 </head>
 <body class="antialiased">
 
+  <!-- HEADER -->
   <header class="sticky top-0 z-40 bg-[#090d16]/95 backdrop-blur border-b border-slate-800">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
       <div class="flex items-center gap-3">
@@ -43,7 +49,7 @@
           Z5
         </div>
         <div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
             <h1 class="text-base sm:text-lg font-extrabold text-white tracking-tight">ZamacPCP <span class="text-sky-400">Pro</span></h1>
             <button onclick="openServerModal()" id="conn-badge" class="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
               <span id="conn-dot" class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
@@ -64,13 +70,18 @@
       </div>
     </div>
 
+    <!-- NAVIGATION TABS (INCLUDES NEW DYNAMIC REAL-TIME MONITOR TAB) -->
     <div class="max-w-7xl mx-auto px-4 pb-3 overflow-x-auto no-scrollbar">
       <div class="flex items-center gap-2">
-        <button onclick="setTab('painel')" id="btn-tab-painel" class="tab-btn active px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 text-slate-300">
+        <button onclick="setTab('monitor')" id="btn-tab-monitor" class="tab-btn active px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 text-slate-300 flex items-center gap-1.5">
+          <span>🚨</span> Monitor Prazos & Alertas
+          <span id="nav-badge-atrasos" class="hidden px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[10px] font-extrabold">0</span>
+        </button>
+        <button onclick="setTab('painel')" id="btn-tab-painel" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 text-slate-300">
           📊 Painel & Gargalos
         </button>
         <button onclick="setTab('importar')" id="btn-tab-importar" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 text-slate-300">
-          📤 Importar Pedidos (Lote)
+          📤 Importar Pedidos
         </button>
         <button onclick="setTab('ops')" id="btn-tab-ops" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 text-slate-300">
           📋 Ordens (OP)
@@ -90,7 +101,98 @@
 
   <main class="max-w-7xl mx-auto px-4 py-5 space-y-5">
 
-    <section id="sec-painel" class="space-y-5">
+    <!-- =================================================================== -->
+    <!-- TAB 0 (NOVA): MONITOR DINAMICO EM TEMPO REAL (ATRASOS & ADIANTADAS) -->
+    <!-- =================================================================== -->
+    <section id="sec-monitor" class="space-y-5">
+
+      <!-- BANNER DE AVISO DE ATRASO EM TEMPO REAL -->
+      <div id="delay-alert-banner" class="hidden rounded-2xl bg-rose-950/50 border border-rose-500/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 alert-pulse">
+        <div class="flex items-start sm:items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-rose-600/30 border border-rose-500/50 flex items-center justify-center text-xl shrink-0">
+            ⚠️
+          </div>
+          <div>
+            <h2 id="delay-banner-title" class="text-sm font-extrabold text-rose-200">Atenção: Existem Ordens de Produção em Atraso!</h2>
+            <p id="delay-banner-sub" class="text-xs text-rose-300/90 mt-0.5">Verifique os lotes vencidos abaixo e priorize na injeção, banho ou cobrança de terceirizados.</p>
+          </div>
+        </div>
+        <button onclick="setMonitorFilter('ATRASADO')" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shrink-0 transition">
+          Ver Só Atrasadas
+        </button>
+      </div>
+
+      <!-- 4 SEMAFOROS CLICAVEIS POR COR DE URGENCIA -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <!-- VERMELHO: ATRASADAS -->
+        <div onclick="setMonitorFilter('ATRASADO')" id="card-sem-ATRASADO" class="cursor-pointer transition rounded-2xl p-4 bg-rose-950/30 border border-rose-500/40 hover:border-rose-400">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-rose-400">🔴 Atrasadas</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold">Crítico</span>
+          </div>
+          <p id="mon-cnt-atrasado" class="text-2xl sm:text-3xl font-extrabold text-white mt-1.5">0</p>
+          <p id="mon-pcs-atrasado" class="text-[11px] text-rose-300 mt-1">0 peças vencidas</p>
+        </div>
+
+        <!-- LARANJA / AMBAR: URGENTE (HOJE OU AMANHA) -->
+        <div onclick="setMonitorFilter('URGENTE')" id="card-sem-URGENTE" class="cursor-pointer transition rounded-2xl p-4 bg-amber-950/30 border border-amber-500/40 hover:border-amber-400">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-400">🟠 Urgente (0–48h)</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">Atenção</span>
+          </div>
+          <p id="mon-cnt-urgente" class="text-2xl sm:text-3xl font-extrabold text-white mt-1.5">0</p>
+          <p id="mon-pcs-urgente" class="text-[11px] text-amber-300 mt-1">0 peças p/ entrega imediata</p>
+        </div>
+
+        <!-- AZUL: NO PRAZO NORMAL -->
+        <div onclick="setMonitorFilter('NO_PRAZO')" id="card-sem-NO_PRAZO" class="cursor-pointer transition rounded-2xl p-4 bg-sky-950/30 border border-sky-500/40 hover:border-sky-400">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-sky-400">🔵 No Prazo</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-bold">Normal</span>
+          </div>
+          <p id="mon-cnt-noprazo" class="text-2xl sm:text-3xl font-extrabold text-white mt-1.5">0</p>
+          <p id="mon-pcs-noprazo" class="text-[11px] text-sky-300 mt-1">0 peças no cronograma</p>
+        </div>
+
+        <!-- VERDE: PECAS ADIANTADAS -->
+        <div onclick="setMonitorFilter('ADIANTADO')" id="card-sem-ADIANTADO" class="cursor-pointer transition rounded-2xl p-4 bg-emerald-950/30 border border-emerald-500/40 hover:border-emerald-400">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">🟢 Adiantadas</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">Antecipado</span>
+          </div>
+          <p id="mon-cnt-adiantado" class="text-2xl sm:text-3xl font-extrabold text-white mt-1.5">0</p>
+          <p id="mon-pcs-adiantado" class="text-[11px] text-emerald-300 mt-1">0 peças prontas/adiantadas</p>
+        </div>
+      </div>
+
+      <!-- CONTROLES DE TEMPO REAL + FILTROS DO MONITOR -->
+      <div class="card-dark rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+            <div>
+              <h2 class="text-sm font-bold text-white">Painel Dinâmico de Prazos & Status em Tempo Real</h2>
+              <p id="mon-live-clock" class="text-[11px] text-slate-400">Atualização automática a cada 5s • Ordenado por criticidade</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <button onclick="setMonitorFilter('')" class="text-xs px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium">
+              Mostrar Todas
+            </button>
+            <input id="flt-mon-q" type="search" oninput="renderAll()" placeholder="🔍 Buscar OP, Ref, Cliente ou Setor..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:border-sky-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <!-- LISTA DE CARDS DINAMICOS POR COR DE URGENCIA -->
+        <div id="monitor-cards-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1"></div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 1: PAINEL & GARGALOS                                            -->
+    <!-- =================================================================== -->
+    <section id="sec-painel" class="hidden space-y-5">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div class="card-dark rounded-2xl p-4">
           <p class="text-xs text-slate-400">OPs / Itens Ativos</p>
@@ -118,7 +220,7 @@
         <div class="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h2 class="text-sm font-bold text-white">Carga por Setor Fabril & Terceirizados</h2>
-            <p class="text-xs text-slate-400">Toque em qualquer setor abaixo para filtrar a fila de produção imediatamente</p>
+            <p class="text-xs text-slate-400">Toque em qualquer setor abaixo para filtrar a fila de produção</p>
           </div>
           <div class="flex items-center gap-2">
             <span id="last-sync-txt" class="text-[11px] text-slate-400">Aguardando sync...</span>
@@ -171,7 +273,7 @@
                 <th class="py-3 px-3.5">Qtd / Peso Z5</th>
                 <th class="py-3 px-3.5">Acabamento</th>
                 <th class="py-3 px-3.5">Setor / Terceiro</th>
-                <th class="py-3 px-3.5">Entrega</th>
+                <th class="py-3 px-3.5">Status Prazo</th>
               </tr>
             </thead>
             <tbody id="painel-tbody" class="divide-y divide-slate-800/60 text-xs"></tbody>
@@ -180,6 +282,9 @@
       </div>
     </section>
 
+    <!-- =================================================================== -->
+    <!-- TAB 2: IMPORTAR ORDENS DE SERVICO / PEDIDOS EM LOTE                 -->
+    <!-- =================================================================== -->
     <section id="sec-importar" class="hidden space-y-5">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div class="card-dark rounded-2xl p-4 sm:p-5 lg:col-span-5 space-y-4">
@@ -270,6 +375,9 @@
       </div>
     </section>
 
+    <!-- =================================================================== -->
+    <!-- TAB 3: ORDENS DE PRODUCAO                                           -->
+    <!-- =================================================================== -->
     <section id="sec-ops" class="hidden space-y-5">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div class="card-dark rounded-2xl p-4 space-y-3">
@@ -362,6 +470,9 @@
       </div>
     </section>
 
+    <!-- =================================================================== -->
+    <!-- TAB 4: APONTAMENTO DE PRODUCAO & RETRABALHO                         -->
+    <!-- =================================================================== -->
     <section id="sec-apontamento" class="hidden space-y-5">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div class="card-dark rounded-2xl p-4 space-y-3">
@@ -453,6 +564,9 @@
       </div>
     </section>
 
+    <!-- =================================================================== -->
+    <!-- TAB 5: GERENCIADOR DE SETORES INTERNOS & TERCEIRIZADOS              -->
+    <!-- =================================================================== -->
     <section id="sec-setores" class="hidden space-y-5">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div class="card-dark rounded-2xl p-4 space-y-3">
@@ -509,6 +623,9 @@
       </div>
     </section>
 
+    <!-- =================================================================== -->
+    <!-- TAB 6: LIGA ZAMAC Z5                                                -->
+    <!-- =================================================================== -->
     <section id="sec-liga" class="hidden space-y-5">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div class="card-dark rounded-2xl p-4 space-y-3">
@@ -580,6 +697,7 @@
 
   </main>
 
+  <!-- MODAL CONFIGURAR IP DO SERVIDOR LOCAL -->
   <div id="server-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="card-dark rounded-2xl p-5 w-full max-w-md space-y-4">
       <div>
@@ -599,12 +717,13 @@
   </div>
 
   <script>
-    const KEY_SERVER_URL = "zamac_pcp_server_url_v4";
-    const KEY_CACHE_DATA = "zamac_pcp_cache_data_v4";
+    const KEY_SERVER_URL = "zamac_pcp_server_url_v5";
+    const KEY_CACHE_DATA = "zamac_pcp_cache_data_v5";
 
     let state = { setores: [], ops: [], apontamentos: [], estoque: [] };
     let parsedBatchItems = [];
     let isOnlineServer = false;
+    let monitorFilterCategory = ""; // "", "ATRASADO", "URGENTE", "NO_PRAZO", "ADIANTADO"
 
     function norm(str) {
       return String(str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -658,23 +777,31 @@
     }
 
     function getSeedFallback() {
-      const now = new Date().toLocaleString("pt-BR").slice(0, 16);
+      const now = new Date();
+      const fmt = (d) => d.toISOString().slice(0, 10);
+      const dAtrasado = new Date(now); dAtrasado.setDate(now.getDate() - 2);
+      const dHoje = new Date(now);
+      const dAmanha = new Date(now); dAmanha.setDate(now.getDate() + 1);
+      const dAdiantado = new Date(now); dAdiantado.setDate(now.getDate() + 7);
+
       return {
         setores: [
           { id: 1, nome: "Injeção Z5", tipo: "Interno", fornecedor_obs: "Injetoras 01 a 04", ordem: 1 },
           { id: 2, nome: "Tamboreamento", tipo: "Interno", fornecedor_obs: "Vibradores", ordem: 2 },
           { id: 3, nome: "Galvanoplastia", tipo: "Interno", fornecedor_obs: "Linha Interna", ordem: 3 },
-          { id: 4, nome: "Pintura Epóxi (Terceiro)", tipo: "Terceirizado", fornecedor_obs: "Prestador Externo", ordem: 4 },
+          { id: 4, nome: "Galvanoplastia (Terceiro)", tipo: "Terceirizado", fornecedor_obs: "Prestador Externo", ordem: 4 },
           { id: 5, nome: "Verniz / Estufa", tipo: "Interno", fornecedor_obs: "Cabine Verniz", ordem: 5 },
           { id: 6, nome: "Expedição", tipo: "Interno", fornecedor_obs: "Embalagem", ordem: 6 }
         ],
         ops: [
-          { id: 1, numero_op: "OP-2026-001", cliente: "Calçados Beira Rio S.A.", segmento: "Calçados", referencia: "FIV-4092", descricao: "Fivela Anatômica 25mm Zamac Z5", qtd_planejada: 15000, peso_unit_g: 14.5, banho: "Níquel Escovado", etapa_atual: "Galvanoplastia", prioridade: "Alta", data_entrega: "2026-11-28", status: "Em Andamento" },
-          { id: 2, numero_op: "OP-2026-002", cliente: "Arezzo&Co Acessórios", segmento: "Bolsas", referencia: "MOS-8810", descricao: "Mosquetão Giratório 32mm Luxo", qtd_planejada: 8000, peso_unit_g: 28.0, banho: "Ouro Velho + Verniz", etapa_atual: "Pintura Epóxi (Terceiro)", prioridade: "Urgente", data_entrega: "2026-11-26", status: "Em Andamento" }
+          { id: 1, numero_op: "OP-2026-001", cliente: "Calçados Beira Rio S.A.", segmento: "Calçados", referencia: "FIV-4092", descricao: "Fivela Anatômica 25mm Zamac Z5", qtd_planejada: 15000, peso_unit_g: 14.5, banho: "Níquel Escovado", etapa_atual: "Galvanoplastia (Terceiro)", prioridade: "Urgente", data_entrega: fmt(dAtrasado), status: "Em Andamento" },
+          { id: 2, numero_op: "OP-2026-002", cliente: "Arezzo&Co Acessórios", segmento: "Bolsas", referencia: "MOS-8810", descricao: "Mosquetão Giratório 32mm Luxo", qtd_planejada: 8000, peso_unit_g: 28.0, banho: "Ouro Velho + Verniz", etapa_atual: "Injeção Z5", prioridade: "Urgente", data_entrega: fmt(dHoje), status: "Em Andamento" },
+          { id: 3, numero_op: "OP-2026-003", cliente: "Renner Moda / Jeans", segmento: "Vestuário", referencia: "BOT-1120", descricao: "Botão Flexível 17mm Gravado", qtd_planejada: 40000, peso_unit_g: 3.8, banho: "Cromo Brilhante", etapa_atual: "Expedição", prioridade: "Normal", data_entrega: fmt(dAdiantado), status: "Em Andamento" },
+          { id: 4, numero_op: "OP-2026-004", cliente: "Schutz / Grupo", segmento: "Calçados", referencia: "ENF-5504", descricao: "Enfeite Metálico Cabedal Logo", qtd_planejada: 12000, peso_unit_g: 9.2, banho: "Grafite Onix", etapa_atual: "Verniz / Estufa", prioridade: "Alta", data_entrega: fmt(dAmanha), status: "Em Andamento" }
         ],
         apontamentos: [],
         estoque: [
-          { id: 1, tipo: "Entrada Lingote Z5", peso_kg: 1200.0, origem_destino: "Cache Local", data_hora: now }
+          { id: 1, tipo: "Entrada Lingote Z5", peso_kg: 1200.0, origem_destino: "Cache Local", data_hora: now.toLocaleString("pt-BR").slice(0, 16) }
         ]
       };
     }
@@ -690,21 +817,25 @@
         state = await res.json();
         localStorage.setItem(KEY_CACHE_DATA, JSON.stringify(state));
         setConnectionStatus(true, url);
-        document.getElementById("last-sync-txt").textContent = "Sync às " + new Date().toLocaleTimeString("pt-BR").slice(0, 5);
+        const timeStr = new Date().toLocaleTimeString("pt-BR").slice(0, 8);
+        document.getElementById("last-sync-txt").textContent = "Sync às " + timeStr;
+        document.getElementById("mon-live-clock").textContent = `Tempo Real Ativo • Última leitura: ${timeStr}`;
         renderAll();
         return true;
       } catch (e) {
         setConnectionStatus(false, url);
         const cached = localStorage.getItem(KEY_CACHE_DATA);
         state = cached ? JSON.parse(cached) : getSeedFallback();
+        const timeStr = new Date().toLocaleTimeString("pt-BR").slice(0, 8);
         document.getElementById("last-sync-txt").textContent = "Cache offline";
+        document.getElementById("mon-live-clock").textContent = `Monitor Local (Offline) • Atualizado: ${timeStr}`;
         renderAll();
         return false;
       }
     }
 
     function setTab(tab) {
-      ["painel", "importar", "ops", "apontamento", "setores", "liga"].forEach(t => {
+      ["monitor", "painel", "importar", "ops", "apontamento", "setores", "liga"].forEach(t => {
         document.getElementById("sec-" + t).classList.add("hidden");
         document.getElementById("btn-tab-" + t).classList.remove("active");
       });
@@ -716,6 +847,75 @@
       const found = state.setores.find(s => s.nome === nomeSetor);
       if (found) return found.tipo === "Terceirizado";
       return nomeSetor.toLowerCase().includes("terceir");
+    }
+
+    // =========================================================================
+    // CLASSIFICADOR DINAMICO DE URGENCIA / ATRASO / ADIANTAMENTO
+    // =========================================================================
+    function classifyOpSchedule(op) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const parts = String(op.data_entrega || "").split("-");
+      const due = parts.length === 3 ? new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])) : new Date(today);
+      due.setHours(0, 0, 0, 0);
+
+      const diffDays = Math.round((due - today) / (1000 * 60 * 60 * 24));
+      const etapaLower = norm(op.etapa_atual);
+      const isFinalStage = etapaLower.includes("expedi") || etapaLower.includes("verniz") || etapaLower.includes("montagem");
+
+      if (diffDays < 0) {
+        const diasAtraso = Math.abs(diffDays);
+        return {
+          code: "ATRASADO",
+          rank: 1,
+          label: `ATRASADA (${diasAtraso}d)`,
+          subText: diasAtraso === 1 ? "Venceu ontem!" : `Vencida há ${diasAtraso} dias`,
+          cardClass: "bg-rose-950/35 border-rose-500/60",
+          badgeClass: "bg-rose-600 text-white",
+          textClass: "text-rose-300",
+          dot: "🔴"
+        };
+      }
+      if (diffDays === 0 || diffDays === 1 || op.prioridade === "Urgente") {
+        const whenTxt = diffDays === 0 ? "Entrega HOJE!" : (diffDays === 1 ? "Entrega AMANHÃ" : `Entrega em ${diffDays}d (Urgente)`);
+        return {
+          code: "URGENTE",
+          rank: 2,
+          label: diffDays === 0 ? "ENTREGA HOJE" : "URGENTE",
+          subText: whenTxt,
+          cardClass: "bg-amber-950/30 border-amber-500/50",
+          badgeClass: "bg-amber-500 text-slate-950",
+          textClass: "text-amber-300",
+          dot: "🟠"
+        };
+      }
+      if (isFinalStage && diffDays >= 3) {
+        return {
+          code: "ADIANTADO",
+          rank: 4,
+          label: `ADIANTADA (+${diffDays}d)`,
+          subText: `Já em ${op.etapa_atual} faltando ${diffDays} dias`,
+          cardClass: "bg-emerald-950/30 border-emerald-500/50",
+          badgeClass: "bg-emerald-500 text-slate-950",
+          textClass: "text-emerald-300",
+          dot: "🟢"
+        };
+      }
+      return {
+        code: "NO_PRAZO",
+        rank: 3,
+        label: `NO PRAZO (${diffDays}d)`,
+        subText: `Faltam ${diffDays} dias para entrega`,
+        cardClass: "bg-sky-950/20 border-sky-500/35",
+        badgeClass: "bg-sky-600 text-white",
+        textClass: "text-sky-300",
+        dot: "🔵"
+      };
+    }
+
+    function setMonitorFilter(cat) {
+      monitorFilterCategory = (monitorFilterCategory === cat && cat !== "") ? "" : cat;
+      renderAll();
     }
 
     function filterBySetorCard(nomeSetor) {
@@ -782,6 +982,112 @@
       document.getElementById("kpi-refugo").textContent = `${percRefugo.toFixed(2)}%`;
       document.getElementById("kardex-total").textContent = `Saldo Atual: ${saldoZ5.toFixed(1)} kg`;
 
+      // =======================================================================
+      // RENDER MONITOR DE PRAZOS, ATRASOS & PECAS ADIANTADAS
+      // =======================================================================
+      const classifiedOps = ativas.map(op => ({ ...op, sched: classifyOpSchedule(op) }))
+        .sort((a, b) => a.sched.rank - b.sched.rank || String(a.data_entrega).localeCompare(String(b.data_entrega)));
+
+      const grpAtraso = classifiedOps.filter(o => o.sched.code === "ATRASADO");
+      const grpUrgente = classifiedOps.filter(o => o.sched.code === "URGENTE");
+      const grpNoPrazo = classifiedOps.filter(o => o.sched.code === "NO_PRAZO");
+      const grpAdiantado = classifiedOps.filter(o => o.sched.code === "ADIANTADO");
+
+      const sumPcs = (arr) => arr.reduce((acc, o) => acc + Number(o.qtd_planejada), 0);
+
+      document.getElementById("mon-cnt-atrasado").textContent = grpAtraso.length;
+      document.getElementById("mon-pcs-atrasado").textContent = `${sumPcs(grpAtraso).toLocaleString("pt-BR")} peças vencidas`;
+
+      document.getElementById("mon-cnt-urgente").textContent = grpUrgente.length;
+      document.getElementById("mon-pcs-urgente").textContent = `${sumPcs(grpUrgente).toLocaleString("pt-BR")} peças p/ 0-48h`;
+
+      document.getElementById("mon-cnt-noprazo").textContent = grpNoPrazo.length;
+      document.getElementById("mon-pcs-noprazo").textContent = `${sumPcs(grpNoPrazo).toLocaleString("pt-BR")} peças no cronograma`;
+
+      document.getElementById("mon-cnt-adiantado").textContent = grpAdiantado.length;
+      document.getElementById("mon-pcs-adiantado").textContent = `${sumPcs(grpAdiantado).toLocaleString("pt-BR")} peças adiantadas`;
+
+      // Nav badge & Delay Warning Banner
+      const navBadge = document.getElementById("nav-badge-atrasos");
+      const alertBanner = document.getElementById("delay-alert-banner");
+      if (grpAtraso.length > 0) {
+        navBadge.textContent = grpAtraso.length;
+        navBadge.classList.remove("hidden");
+        alertBanner.classList.remove("hidden");
+        const refsAtrasadas = grpAtraso.slice(0, 3).map(o => `${o.numero_op} (${o.referencia})`).join(", ");
+        document.getElementById("delay-banner-title").textContent = `⚠️ ALERTA DE ATRASO: ${grpAtraso.length} ${grpAtraso.length === 1 ? 'OP vencida' : 'OPs vencidas'} (${sumPcs(grpAtraso).toLocaleString("pt-BR")} peças)!`;
+        document.getElementById("delay-banner-sub").textContent = `Lotes críticos: ${refsAtrasadas}${grpAtraso.length > 3 ? '...' : ''}. Ação imediata necessária.`;
+      } else {
+        navBadge.classList.add("hidden");
+        alertBanner.classList.add("hidden");
+      }
+
+      // Highlight active semaphore card
+      ["ATRASADO", "URGENTE", "NO_PRAZO", "ADIANTADO"].forEach(code => {
+        const el = document.getElementById("card-sem-" + code);
+        if (monitorFilterCategory === code) {
+          el.classList.add("ring-2", "ring-white");
+        } else {
+          el.classList.remove("ring-2", "ring-white");
+        }
+      });
+
+      const monQuery = norm(document.getElementById("flt-mon-q").value);
+      const visibleMonitor = classifiedOps.filter(op => {
+        if (monitorFilterCategory && op.sched.code !== monitorFilterCategory) return false;
+        if (monQuery && !norm(`${op.numero_op} ${op.referencia} ${op.cliente} ${op.etapa_atual} ${op.banho}`).includes(monQuery)) return false;
+        return true;
+      });
+
+      const monGrid = document.getElementById("monitor-cards-grid");
+      monGrid.innerHTML = "";
+      const allEtapas = [...state.setores.map(s => s.nome), "Concluída"];
+
+      if (visibleMonitor.length === 0) {
+        monGrid.innerHTML = '<div class="col-span-full py-8 text-center text-xs text-slate-500">Nenhuma ordem neste filtro de urgência.</div>';
+      } else {
+        visibleMonitor.forEach(op => {
+          const s = op.sched;
+          const isTerc = isSetorTerceirizado(op.etapa_atual);
+          const pesoKg = ((op.qtd_planejada * op.peso_unit_g) / 1000).toFixed(1);
+          const options = allEtapas.map(st => `<option value="${st}" ${op.etapa_atual === st ? "selected" : ""}>${st}</option>`).join("");
+
+          const card = document.createElement("div");
+          card.className = `rounded-2xl p-4 border transition flex flex-col justify-between gap-3 ${s.cardClass}`;
+          card.innerHTML = `
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-extrabold text-white">${s.dot} ${op.numero_op}</span>
+                  <span class="text-xs px-2 py-0.5 rounded bg-slate-900/90 text-sky-300 border border-slate-700 font-semibold">${op.referencia}</span>
+                </div>
+                <span class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${s.badgeClass}">${s.label}</span>
+              </div>
+
+              <p class="text-xs font-semibold text-slate-100">${op.cliente} • <span class="text-slate-300 font-normal">${op.descricao}</span></p>
+              <p class="text-xs font-bold ${s.textClass}">${s.subText} (Entrega: ${op.data_entrega})</p>
+
+              <div class="flex items-center gap-2 flex-wrap pt-1 text-[11px] text-slate-300">
+                <span class="px-2 py-0.5 rounded bg-slate-950/80 border border-slate-800">Lote: <strong>${Number(op.qtd_planejada).toLocaleString("pt-BR")} pçs</strong> (${pesoKg} kg Z5)</span>
+                <span class="px-2 py-0.5 rounded bg-slate-950/80 border border-slate-800">Banho: <strong>${op.banho}</strong></span>
+                ${isTerc ? '<span class="px-2 py-0.5 rounded bg-purple-600/30 border border-purple-400/50 text-purple-200 font-bold">EXTERNO / TERCEIRO</span>' : ''}
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-800/70 flex items-center justify-between gap-2">
+              <span class="text-[11px] text-slate-400">Setor Atual:</span>
+              <select onchange="changeEtapa(${op.id}, this.value)" class="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-white focus:border-sky-500">
+                ${options}
+              </select>
+            </div>
+          `;
+          monGrid.appendChild(card);
+        });
+      }
+
+      // =======================================================================
+      // RENDER PIPELINE & OTHER TABS
+      // =======================================================================
       const activeSetorFilter = document.getElementById("flt-painel-setor").value;
       const pipeGrid = document.getElementById("pipeline-grid");
       pipeGrid.innerHTML = "";
@@ -815,13 +1121,13 @@
       const pSeg = document.getElementById("flt-painel-seg").value;
       const pTipo = document.getElementById("flt-painel-tipo").value;
 
-      const filteredPainel = ativas.filter(op => {
+      const filteredPainel = classifiedOps.filter(op => {
         if (pQuery && !norm(`${op.numero_op} ${op.referencia} ${op.cliente} ${op.descricao} ${op.banho}`).includes(pQuery)) return false;
         if (pSetor && op.etapa_atual !== pSetor) return false;
         if (pSeg && op.segmento !== pSeg) return false;
         if (pTipo === "Terceirizado" && !isSetorTerceirizado(op.etapa_atual)) return false;
         if (pTipo === "Interno" && isSetorTerceirizado(op.etapa_atual)) return false;
-        if (pTipo === "Urgente" && op.prioridade !== "Urgente") return false;
+        if (pTipo === "Urgente" && op.prioridade !== "Urgente" && op.sched.code !== "ATRASADO") return false;
         return true;
       });
 
@@ -843,11 +1149,12 @@
           <td class="py-3 px-3.5"><p class="font-semibold text-white">${Number(op.qtd_planejada).toLocaleString("pt-BR")} pçs</p><p class="text-[11px] text-amber-400">${pesoKg} kg Z5</p></td>
           <td class="py-3 px-3.5 text-slate-300">${op.banho}</td>
           <td class="py-3 px-3.5"><span class="px-2 py-1 rounded-lg text-[11px] font-semibold border ${badgeClass}">${op.etapa_atual}</span></td>
-          <td class="py-3 px-3.5 text-slate-300">${op.data_entrega}</td>
+          <td class="py-3 px-3.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${op.sched.badgeClass}">${op.sched.label}</span></td>
         `;
         pBody.appendChild(tr);
       });
 
+      // OPs Cards List
       const oQuery = norm(document.getElementById("flt-ops-q").value);
       const oSetor = document.getElementById("flt-ops-setor").value;
       const oStatus = document.getElementById("flt-ops-status").value;
@@ -864,11 +1171,11 @@
 
       const cardsList = document.getElementById("ops-cards-list");
       cardsList.innerHTML = "";
-      const allEtapas = [...state.setores.map(s => s.nome), "Concluída"];
       filteredOps.forEach(op => {
         const pesoKg = ((op.qtd_planejada * op.peso_unit_g) / 1000).toFixed(1);
         const options = allEtapas.map(s => `<option value="${s}" ${op.etapa_atual === s ? "selected" : ""}>${s}</option>`).join("");
         const isTerc = isSetorTerceirizado(op.etapa_atual);
+        const sched = classifyOpSchedule(op);
         const card = document.createElement("div");
         card.className = "card-dark rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3";
         card.innerHTML = `
@@ -876,7 +1183,7 @@
             <div class="flex items-center gap-2 flex-wrap">
               <span class="text-sm font-extrabold text-white">${op.numero_op}</span>
               <span class="text-xs px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30 font-semibold">${op.referencia}</span>
-              <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300">${op.segmento}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${sched.badgeClass}">${sched.label}</span>
               ${isTerc ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold">TERCEIRIZADO</span>' : ''}
             </div>
             <p class="text-xs text-slate-200 font-medium">${op.cliente} — ${op.descricao}</p>
@@ -891,6 +1198,7 @@
         cardsList.appendChild(card);
       });
 
+      // Setores Table
       const sQuery = norm(document.getElementById("flt-set-q").value);
       const filteredSetores = state.setores.filter(s => !sQuery || norm(`${s.nome} ${s.tipo} ${s.fornecedor_obs}`).includes(sQuery));
       const setTbody = document.getElementById("setores-tbody");
@@ -910,6 +1218,7 @@
         setTbody.appendChild(tr);
       });
 
+      // Apontamentos
       filterApOpDropdown();
       const apQuery = norm(document.getElementById("flt-ap-q").value);
       const apSetor = document.getElementById("flt-ap-setor").value;
@@ -937,6 +1246,7 @@
         apBody.appendChild(tr);
       });
 
+      // Estoque Kardex
       const estQuery = norm(document.getElementById("flt-est-q").value);
       const estTipo = document.getElementById("flt-est-tipo").value;
       const filteredEst = state.estoque.filter(e => {
@@ -960,6 +1270,9 @@
       });
     }
 
+    // =========================================================================
+    // IMPORTACAO EM LOTE & ACOES API
+    // =========================================================================
     function fillExampleBatch() {
       document.getElementById("imp-cliente").value = "Calçados Beira Rio S.A.";
       document.getElementById("imp-raw").value =
@@ -1072,7 +1385,7 @@ OP-2026-103; ENF-9041; Enfeite Laço Cabedal c/ Pino; 12000; 9.8; Ouro Velho + V
           parsedBatchItems = [];
           renderBatchPreview();
           await syncNow();
-          setTab("painel");
+          setTab("monitor");
           alert(`✅ ${json.inserted} ordens importadas!`);
         }
       } catch (e) {
@@ -1110,7 +1423,7 @@ OP-2026-103; ENF-9041; Enfeite Laço Cabedal c/ Pino; 12000; 9.8; Ouro Velho + V
         data_entrega: document.getElementById("op-ent").value || "2026-12-10"
       };
       await postToServer("/api/ops", "POST", payload);
-      setTab("painel");
+      setTab("monitor");
     }
 
     async function changeEtapa(opId, novaEtapa) {
@@ -1187,8 +1500,9 @@ OP-2026-103; ENF-9041; Enfeite Laço Cabedal c/ Pino; 12000; 9.8; Ouro Velho + V
       a.click();
     }
 
+    // Atualização dinâmica em tempo real a cada 5 segundos
     syncNow();
-    setInterval(() => syncNow(false), 15000);
+    setInterval(() => syncNow(false), 5000);
   </script>
 </body>
 </html>

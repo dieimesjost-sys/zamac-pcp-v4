@@ -1,7 +1,7 @@
 {
   "name": "zamac-pcp-pro",
-  "version": "4.0.0",
-  "description": "ZamacPCP Pro v4 - Filtros Avancados, Lote e Terceirizados",
+  "version": "5.0.0",
+  "description": "ZamacPCP Pro v5 - Monitor Tempo Real, Atrasos e Adiantadas",
   "main": "index.js",
   "scripts": {
     "build": "echo 'Ready'"

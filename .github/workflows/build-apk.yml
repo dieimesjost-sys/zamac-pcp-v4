@@ -1,4 +1,4 @@
-name: Build Android APK (ZamacPCP Pro v4)
+name: Build Android APK (ZamacPCP Pro v5)
 
 on:
   push:
@@ -50,5 +50,5 @@ jobs:
       - name: Upload do APK Gerado
         uses: actions/upload-artifact@v4
         with:
-          name: ZamacPCP-Pro-v4.0-Filtros-Pesquisa
+          name: ZamacPCP-Pro-v5.0-Monitor-Tempo-Real
           path: android/app/build/outputs/apk/debug/app-debug.apk
